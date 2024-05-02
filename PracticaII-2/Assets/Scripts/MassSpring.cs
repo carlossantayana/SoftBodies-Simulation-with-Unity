@@ -1,4 +1,5 @@
 using Assets.Scripts;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,11 +19,15 @@ public class MassSpring : MonoBehaviour
     public Integration integrationMethod; //Variable con la que escoger el método de integración a utilizar.
 
     Mesh mesh; //Mallado triangular de la tela.
-    Vector3[] vertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
+    Vector3[] oldVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
+    public TextAsset nodesFile;
+    Vector3[] vertices;
     List<Node> nodes; //Lista de objetos de la clase nodo que almacenan las propiedas físicas de los vértices del mallado para el cálculo de la animación.
     List<Spring> springs = new List<Spring>(); //Lista de objetos de la clase muelle que almacena las propiedades físicas de cada muelle y los 2 vértices que lo componen
                                                //para el cálculo de la animación.
     int[] triangles; //Lista que almacena 3 enteros por triángulo de la malla.
+    public TextAsset tetrahedronsFile;
+    int[] tetrahedrons;
     List<Edge> edges = new List<Edge>(); //Lista que almacena todas las aristas de la malla.
 
     public float clothMass = 1f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
@@ -54,6 +59,8 @@ public class MassSpring : MonoBehaviour
     {
         paused = true; //Al comienzo de la ejecución, la animación se encuentra pausada.
 
+        ReadTetrahedronsFile();
+
         //Se inicializa el valor de los comprobadores al valor inicial de las variables originales.
         clothMassChangeCheck = clothMass;
         flexionSpringStiffnessChangeCheck = flexionSpringStiffness;
@@ -67,14 +74,14 @@ public class MassSpring : MonoBehaviour
                               //lo que supone controlar mejor el margen de error.
 
         mesh = gameObject.GetComponent<MeshFilter>().mesh; //Se almacena una referencia al mallado del gameObject.
-        vertices = mesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado en un array.
-        nodes = new List<Node>(vertices.Length); //Se crea una lista con tantos nodos como vértices.
+        oldVertices = mesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado en un array.
+        nodes = new List<Node>(oldVertices.Length); //Se crea una lista con tantos nodos como vértices.
 
-        for (int i = 0; i < vertices.Length; i++)
+        for (int i = 0; i < oldVertices.Length; i++)
         {
             //Se insertan en la lista cada uno de los vértices, almacenándose su identificador, su posición en coordenadas globales,
             //y la parte proporcional que le corresponde de la masa total de la tela.
-            nodes.Add(new Node(i, transform.TransformPoint(vertices[i]), clothMass / vertices.Length));
+            nodes.Add(new Node(i, transform.TransformPoint(oldVertices[i]), clothMass / oldVertices.Length));
         }
 
 
@@ -96,9 +103,9 @@ public class MassSpring : MonoBehaviour
         for (int i = 0; i < triangles.Length; i += 3) //Recorremos los triángulos.
         {
             //Se crean las 3 aristas del triángulo
-            Edge A = new Edge(triangles[i], triangles[i + 1], triangles[i + 2]);
-            Edge B = new Edge(triangles[i], triangles[i + 2], triangles[i + 1]);
-            Edge C = new Edge(triangles[i + 1], triangles[i + 2], triangles[i]);
+            Edge A = new Edge(triangles[i], triangles[i + 1]);
+            Edge B = new Edge(triangles[i], triangles[i + 2]);
+            Edge C = new Edge(triangles[i + 1], triangles[i + 2]);
 
             //Se añaden al array de aristas.
             edges.Add(A); edges.Add(B); edges.Add(C);
@@ -114,8 +121,7 @@ public class MassSpring : MonoBehaviour
         {
             if (edges[i].Equals(previousEdge)) //Si la arista actual es igual a la anterior (es una arista repetida)
             {
-                //Aprovechamos el vértice opuesto a la arista para crear el muelle de flexión. Se almacena el tipo de muelle en forma de string.
-                springs.Add(new Spring(flexionSpringStiffness, nodes[edges[i].vertexOther], nodes[previousEdge.vertexOther], "flexion"));
+                Debug.Log("Repeated Edge!");
             }
             else //Si no
             {
@@ -199,13 +205,13 @@ public class MassSpring : MonoBehaviour
                 spring.UpdateSpring(); //Se recalculan los datos del muelle en el siguiente instante.
             }
 
-            for (int i = 0; i < vertices.Length; i++)
+            for (int i = 0; i < oldVertices.Length; i++)
             {
                 //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los nodos.
-                vertices[i] = transform.InverseTransformPoint(nodes[i].pos);
+                oldVertices[i] = transform.InverseTransformPoint(nodes[i].pos);
             }
 
-            mesh.vertices = vertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
+            mesh.vertices = oldVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
             mesh.RecalculateBounds(); //Se recalculan los bordes de la malla.
         }
     }
@@ -324,7 +330,7 @@ public class MassSpring : MonoBehaviour
     {
         foreach (Node node in nodes)
         {
-            node.mass = clothMass / vertices.Length;
+            node.mass = clothMass / oldVertices.Length;
         }
     }
 
@@ -349,5 +355,25 @@ public class MassSpring : MonoBehaviour
     private void UpdateIntegrationStep()
     {
         h_def = h / substeps;
+    }
+
+    void ReadTetrahedronsFile()
+    {
+        List<int> tetrahedrons = new List<int>();
+
+        string[] lines = tetrahedronsFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries);
+
+        for (int i = 1; i < lines.Length - 1; i++)
+        {
+            string line = lines[i];
+            string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+            for (int j = 1; j < values.Length; j++)
+            {
+                string value = values[j].Trim('\r');
+                tetrahedrons.Add(Int32.Parse(value));
+            }
+        }
+
+        this.tetrahedrons = tetrahedrons.ToArray();
     }
 }
