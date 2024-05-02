@@ -516,7 +516,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1ad634f3a0fe327428d40b15261130e2, type: 2}
+  - {fileID: 2100000, guid: 339a608fd0cbc1344b2d3253f241c339, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -707,7 +707,7 @@ Transform:
   - {fileID: 3478939511271632515}
   - {fileID: 7110900345290657624}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8601238912392824385
 MonoBehaviour:
@@ -718,7 +718,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8334009554196877574}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa97c2774b9b0ea40af62854673c522a, type: 3}
+  m_Script: {fileID: 11500000, guid: 19814897734eef949b764a82a346079a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   maxWindForce: 1
