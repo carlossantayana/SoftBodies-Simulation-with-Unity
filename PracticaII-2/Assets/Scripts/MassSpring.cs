@@ -59,6 +59,7 @@ public class MassSpring : MonoBehaviour
     {
         paused = true; //Al comienzo de la ejecución, la animación se encuentra pausada.
 
+        ReadNodesFile();
         ReadTetrahedronsFile();
 
         //Se inicializa el valor de los comprobadores al valor inicial de las variables originales.
@@ -77,11 +78,11 @@ public class MassSpring : MonoBehaviour
         oldVertices = mesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado en un array.
         nodes = new List<Node>(oldVertices.Length); //Se crea una lista con tantos nodos como vértices.
 
-        for (int i = 0; i < oldVertices.Length; i++)
+        for (int i = 0; i < vertices.Length; i++)
         {
             //Se insertan en la lista cada uno de los vértices, almacenándose su identificador, su posición en coordenadas globales,
             //y la parte proporcional que le corresponde de la masa total de la tela.
-            nodes.Add(new Node(i, transform.TransformPoint(oldVertices[i]), clothMass / oldVertices.Length));
+            nodes.Add(new Node(i, transform.TransformPoint(vertices[i]), clothMass / vertices.Length));
         }
 
 
@@ -100,15 +101,18 @@ public class MassSpring : MonoBehaviour
 
         triangles = mesh.triangles; //Array que almacena en 3 posiciones consecutivas los índices de los vértices de cada triángulo.
 
-        for (int i = 0; i < triangles.Length; i += 3) //Recorremos los triángulos.
+        for (int i = 0; i < tetrahedrons.Length; i += 4) //Recorremos los triángulos.
         {
             //Se crean las 3 aristas del triángulo
             Edge A = new Edge(triangles[i], triangles[i + 1]);
             Edge B = new Edge(triangles[i], triangles[i + 2]);
-            Edge C = new Edge(triangles[i + 1], triangles[i + 2]);
+            Edge C = new Edge(triangles[i], triangles[i + 3]);
+            Edge D = new Edge(triangles[i + 1], triangles[i + 2]);
+            Edge E = new Edge(triangles[i + 1], triangles[i + 3]);
+            Edge F = new Edge(triangles[i + 2], triangles[i + 3]);
 
             //Se añaden al array de aristas.
-            edges.Add(A); edges.Add(B); edges.Add(C);
+            edges.Add(A); edges.Add(B); edges.Add(C); edges.Add(D); edges.Add(E); edges.Add(F);
         }
 
         //Para eliminar aristas duplicadas y crear la estructura DCEL se utiliza el siguiente algoritmo de coste O(N*log(N)):
@@ -370,10 +374,30 @@ public class MassSpring : MonoBehaviour
             for (int j = 1; j < values.Length; j++)
             {
                 string value = values[j].Trim('\r');
-                tetrahedrons.Add(Int32.Parse(value));
+                tetrahedrons.Add(int.Parse(value));
             }
         }
 
         this.tetrahedrons = tetrahedrons.ToArray();
+    }
+
+    void ReadNodesFile()
+    {
+        List<Vector3> vertices = new List<Vector3>();
+
+        string[] lines = tetrahedronsFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries);
+
+        for (int i = 1; i < lines.Length - 1; i++)
+        {
+            string line = lines[i];
+            string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+            int valueX = int.Parse(values[1].Trim('\r'));
+            int valueY = int.Parse(values[3].Trim('\r'));
+            int valueZ = int.Parse(values[2].Trim('\r'));
+            Vector3 vertex = new Vector3(valueX, valueY, valueZ);
+            vertices.Add(vertex);
+        }
+
+        this.vertices = vertices.ToArray();
     }
 }
