@@ -47,7 +47,7 @@ public class MassSpring : MonoBehaviour
 
     private float h_def; //Paso efectivo finalmente utilizado en la integración. Puede diferir de h en caso de que substeps > 1.
 
-    private Wind wind; //Componente del viento y sus propiedades para aplicar la fuerza de este sobre la tela.
+    //private Wind wind; //Componente del viento y sus propiedades para aplicar la fuerza de este sobre la tela.
 
     // Start is called before the first frame update
     void Start()
@@ -61,7 +61,7 @@ public class MassSpring : MonoBehaviour
         hChangeCheck = h;
         substepsChangeCheck = substeps;
 
-        wind = GameObject.Find("Wind").GetComponent<Wind>(); //Se almacena el componente del viento del gameObject "Wind".
+        //wind = GameObject.Find("Wind").GetComponent<Wind>(); //Se almacena el componente del viento del gameObject "Wind".
 
         h_def = h / substeps; //El paso efectivo es igual al paso base divido entre el número de subpasos a realizar por frame. Se utiliza finalmente un paso inferior,
                               //lo que supone controlar mejor el margen de error.
@@ -223,7 +223,7 @@ public class MassSpring : MonoBehaviour
 
             //Se agrega la fuerza del viento en función de su intensidad, de la máxima fuerza que puede alcanzar, y su dirección. También se agrega
             //un cierto grado de aleatoriedad para cada nodo en cada frame, pues el viento nunca permanece completamente constante.
-            node.force += (wind.WindIntensity * wind.maxWindForce * Random.Range(0f, 1f)) * wind.WindDirection;
+            //node.force += (wind.WindIntensity * wind.maxWindForce * Random.Range(0f, 1f)) * wind.WindDirection;
 
             ApplyDampingNode(node); //Se aplica la fuerza de amortiguamiento absoluto al nodo
         }
@@ -253,7 +253,7 @@ public class MassSpring : MonoBehaviour
 
             //Se agrega la fuerza del viento en función de su intensidad, de la máxima fuerza que puede alcanzar, y su dirección. También se agrega
             //un cierto grado de aleatoriedad para cada nodo en cada frame, pues el viento nunca permanece completamente constante.
-            node.force += (wind.WindIntensity * wind.maxWindForce * Random.Range(0f, 1f)) * wind.WindDirection;
+            //node.force += (wind.WindIntensity * wind.maxWindForce * Random.Range(0f, 1f)) * wind.WindDirection;
 
             ApplyDampingNode(node); //Se aplica la fuerza de amortiguamiento absoluto al nodo
         }
