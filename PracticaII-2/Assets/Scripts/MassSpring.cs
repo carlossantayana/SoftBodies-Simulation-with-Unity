@@ -2,6 +2,7 @@ using Assets.Scripts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 //Componente que permite animar una tela utilizando el método masa-muelle.
@@ -74,9 +75,9 @@ public class MassSpring : MonoBehaviour
         h_def = h / substeps; //El paso efectivo es igual al paso base divido entre el número de subpasos a realizar por frame. Se utiliza finalmente un paso inferior,
                               //lo que supone controlar mejor el margen de error.
 
-        mesh = gameObject.GetComponent<MeshFilter>().mesh; //Se almacena una referencia al mallado del gameObject.
-        oldVertices = mesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado en un array.
-        nodes = new List<Node>(oldVertices.Length); //Se crea una lista con tantos nodos como vértices.
+        //mesh = gameObject.GetComponent<MeshFilter>().mesh; //Se almacena una referencia al mallado del gameObject.
+        //oldVertices = mesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado en un array.
+        nodes = new List<Node>(vertices.Length); //Se crea una lista con tantos nodos como vértices.
 
         for (int i = 0; i < vertices.Length; i++)
         {
@@ -99,17 +100,17 @@ public class MassSpring : MonoBehaviour
         }
 
 
-        triangles = mesh.triangles; //Array que almacena en 3 posiciones consecutivas los índices de los vértices de cada triángulo.
+        //triangles = mesh.triangles; //Array que almacena en 3 posiciones consecutivas los índices de los vértices de cada triángulo.
 
         for (int i = 0; i < tetrahedrons.Length; i += 4) //Recorremos los triángulos.
         {
             //Se crean las 3 aristas del triángulo
-            Edge A = new Edge(triangles[i], triangles[i + 1]);
-            Edge B = new Edge(triangles[i], triangles[i + 2]);
-            Edge C = new Edge(triangles[i], triangles[i + 3]);
-            Edge D = new Edge(triangles[i + 1], triangles[i + 2]);
-            Edge E = new Edge(triangles[i + 1], triangles[i + 3]);
-            Edge F = new Edge(triangles[i + 2], triangles[i + 3]);
+            Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1]);
+            Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2]);
+            Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3]);
+            Edge D = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 2]);
+            Edge E = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 3]);
+            Edge F = new Edge(tetrahedrons[i + 2], tetrahedrons[i + 3]);
 
             //Se añaden al array de aristas.
             edges.Add(A); edges.Add(B); edges.Add(C); edges.Add(D); edges.Add(E); edges.Add(F);
@@ -209,14 +210,14 @@ public class MassSpring : MonoBehaviour
                 spring.UpdateSpring(); //Se recalculan los datos del muelle en el siguiente instante.
             }
 
-            for (int i = 0; i < oldVertices.Length; i++)
-            {
-                //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los nodos.
-                oldVertices[i] = transform.InverseTransformPoint(nodes[i].pos);
-            }
+            //for (int i = 0; i < oldVertices.Length; i++)
+            //{
+            //    //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los nodos.
+            //    oldVertices[i] = transform.InverseTransformPoint(nodes[i].pos);
+            //}
 
-            mesh.vertices = oldVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
-            mesh.RecalculateBounds(); //Se recalculan los bordes de la malla.
+            //mesh.vertices = oldVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
+            //mesh.RecalculateBounds(); //Se recalculan los bordes de la malla.
         }
     }
 
@@ -324,7 +325,7 @@ public class MassSpring : MonoBehaviour
 
             foreach (Node node in nodes) //Se recorren los nodos.
             {
-                Gizmos.DrawSphere(node.pos, 0.05f); //Se pinta una esfera en cada uno de los nodos.
+                Gizmos.DrawSphere(node.pos, 0.2f); //Se pinta una esfera en cada uno de los nodos.
             }
         }
     } //Estos Gizmos nos permiten ver en tiempo real el movimiento de los vértices y los distintos tipos de muelles.
@@ -374,7 +375,7 @@ public class MassSpring : MonoBehaviour
             for (int j = 1; j < values.Length; j++)
             {
                 string value = values[j].Trim('\r');
-                tetrahedrons.Add(int.Parse(value));
+                tetrahedrons.Add(int.Parse(value) - 1);
             }
         }
 
@@ -385,15 +386,15 @@ public class MassSpring : MonoBehaviour
     {
         List<Vector3> vertices = new List<Vector3>();
 
-        string[] lines = tetrahedronsFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = nodesFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries);
 
         for (int i = 1; i < lines.Length - 1; i++)
         {
             string line = lines[i];
             string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-            int valueX = int.Parse(values[1].Trim('\r'));
-            int valueY = int.Parse(values[3].Trim('\r'));
-            int valueZ = int.Parse(values[2].Trim('\r'));
+            float valueX = float.Parse(values[1].Trim('\r'), CultureInfo.InvariantCulture);
+            float valueY = float.Parse(values[3].Trim('\r'), CultureInfo.InvariantCulture);
+            float valueZ = float.Parse(values[2].Trim('\r'), CultureInfo.InvariantCulture);
             Vector3 vertex = new Vector3(valueX, valueY, valueZ);
             vertices.Add(vertex);
         }
