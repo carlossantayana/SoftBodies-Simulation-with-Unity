@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 //Componente que permite animar una tela utilizando el método masa-muelle.
-public class MassSpringCloth : MonoBehaviour
+public class MassSpring : MonoBehaviour
 {
     public bool paused; //Booleano que se encarga de pausar y reanudar la animación.
 
