@@ -317,28 +317,21 @@ public class MassSpring : MonoBehaviour
         if (Application.isPlaying) //Se dibujarán únicamente durante la ejecución de la aplicación, pues es al inicio de esta que se crean
                                    //los muelles y nodos de la envolvente.
         {
-            foreach (Spring spring in envelopeSprings) //Se recorre la lista de muelles, y en función del tipo del muelle se utiliza un color u otro.
-            {
-                if (spring.springType == "flexion")
-                {
-                    Gizmos.color = Color.blue; //Muelles de flexión de color azul.
-                }
-                else
-                {
-                    Gizmos.color = Color.red; //Muelles de tracción de color rojo.
-                }
+            Gizmos.color = Color.red; //Muelles de tracción de color rojo.
 
+            foreach (Spring spring in envelopeSprings) //Se recorre la lista de muelles.
+            {
                 Gizmos.DrawLine(spring.nodeA.pos, spring.nodeB.pos); //Se dibuja una línea entre el par de nodos del muelle.
             }
 
-            Gizmos.color = Color.black; //Se cambia a color negro.
+            Gizmos.color = Color.black; //Nodos de color negro.
 
             foreach (Node node in envelopeNodes) //Se recorren los nodos.
             {
                 Gizmos.DrawSphere(node.pos, 0.2f); //Se pinta una esfera en cada uno de los nodos.
             }
         }
-    } //Estos Gizmos nos permiten ver en tiempo real el movimiento de los vértices y los distintos tipos de muelles.
+    } //Estos Gizmos nos permiten ver en tiempo real el movimiento de los vértices y los muelles.
 
     //Método que se llama en caso de que la masa de la tela se haya modificado desde el inspector, actualizando las masas de cada uno de los nodos.
     private void UpdateNodeMass()
