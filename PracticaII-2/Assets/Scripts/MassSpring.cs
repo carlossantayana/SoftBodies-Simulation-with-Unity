@@ -38,14 +38,11 @@ public class MassSpring : MonoBehaviour
     Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
     List<Point> assetNodes;
 
-    public float clothMass = 1f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
-    private float clothMassChangeCheck; //Variable para comprobar si cambió el valor de la masa.
+    public float objectDensity = 1f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
+    private float objectDensityChangeCheck; //Variable para comprobar si cambió el valor de la masa.
 
-    public float tractionSpringStiffness = 20f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
-    private float tractionSpringStiffnessChangeCheck; //Variable para comprobar si cambió el valor de la rigidez de tracción.
-
-    public float flexionSpringStiffness = 6f; //Constante de rigidez de los muelles de flexión. Sin embargo, sí se dobla fácilmente.
-    private float flexionSpringStiffnessChangeCheck; //Variable para comprobar si cambió el valor de la rigidez de flexión.
+    public float tractionSpringStiffnessDensity = 20f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
+    private float tractionSpringStiffnessDensityChangeCheck; //Variable para comprobar si cambió el valor de la rigidez de tracción.
 
     public float dAbsolute = 0.002f; //Constante de amortiguamiento (damping) absoluto sobre la velocidad de los nodos.
     public float dDeformation = 0.02f; //Constante de amortiguamiento de la deformación de los muelles.
@@ -72,9 +69,8 @@ public class MassSpring : MonoBehaviour
         ReadTetrahedronsFile();
 
         //Se inicializa el valor de los comprobadores al valor inicial de las variables originales.
-        clothMassChangeCheck = clothMass;
-        flexionSpringStiffnessChangeCheck = flexionSpringStiffness;
-        tractionSpringStiffnessChangeCheck = tractionSpringStiffness;
+        objectDensityChangeCheck = objectDensity;
+        tractionSpringStiffnessDensityChangeCheck = tractionSpringStiffnessDensity;
         hChangeCheck = h;
         substepsChangeCheck = substeps;
 
@@ -89,7 +85,7 @@ public class MassSpring : MonoBehaviour
         {
             //Se insertan en la lista cada uno de los vértices, almacenándose su identificador, su posición en coordenadas globales,
             //y la parte proporcional que le corresponde de la masa total de la tela.
-            envelopeNodes.Add(new Node(i, transform.TransformPoint(envelopeVertices[i]), clothMass / envelopeVertices.Length));
+            envelopeNodes.Add(new Node(i, transform.TransformPoint(envelopeVertices[i])));
         }
 
 
@@ -107,19 +103,21 @@ public class MassSpring : MonoBehaviour
 
         for (int i = 0; i < tetrahedrons.Length; i += 4) //Recorremos los tetraedros.
         {
+            //Se crea el tetraedro con referencias a los nodos de los que está compuesto y se añade a la lista de tetraedros.
+            Tetrahedron tetrahedron = new Tetrahedron(envelopeNodes[tetrahedrons[i]], envelopeNodes[tetrahedrons[i + 1]],
+                envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]]);
+            tetrahedronsList.Add(tetrahedron);
+
             //Se crean las 6 aristas del tetraedro.
-            Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1]);
-            Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2]);
-            Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3]);
-            Edge D = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 2]);
-            Edge E = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 3]);
-            Edge F = new Edge(tetrahedrons[i + 2], tetrahedrons[i + 3]);
+            Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1], tetrahedron.volume);
+            Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2], tetrahedron.volume);
+            Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3], tetrahedron.volume);
+            Edge D = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 2], tetrahedron.volume);
+            Edge E = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 3], tetrahedron.volume);
+            Edge F = new Edge(tetrahedrons[i + 2], tetrahedrons[i + 3], tetrahedron.volume);
 
             //Se añaden al array de aristas.
             edges.Add(A); edges.Add(B); edges.Add(C); edges.Add(D); edges.Add(E); edges.Add(F);
-
-            //Se crea el tetraedro con referencias a los nodos de los que está compuesto y se añade a la lista de tetraedros.
-            tetrahedronsList.Add(new Tetrahedron(envelopeNodes[tetrahedrons[i]], envelopeNodes[tetrahedrons[i + 1]], envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]]));
         }
 
         //Para eliminar aristas duplicadas y crear la estructura DCEL se utiliza el siguiente algoritmo de coste O(N*log(N)):
@@ -137,7 +135,8 @@ public class MassSpring : MonoBehaviour
             else //Si no
             {
                 //Agregamos un muelle de tracción en la arista. Se almacena el tipo de muelle en forma de string.
-                envelopeSprings.Add(new Spring(tractionSpringStiffness, envelopeNodes[edges[i].vertexA], envelopeNodes[edges[i].vertexB], "traction"));
+                envelopeSprings.Add(new Spring(tractionSpringStiffnessDensity, envelopeNodes[edges[i].vertexA], envelopeNodes[edges[i].vertexB], 
+                    edges[i].tetrahedronContainerVolume));
             }
 
             previousEdge = edges[i]; //Actualizamos la referencia a la arista anterior.
@@ -178,22 +177,16 @@ public class MassSpring : MonoBehaviour
         //la rigidez de los muelles, o el tamaño del paso efectivo de integración. A su vez, se actualizará la copia, una vez realizados los cambios.
         //Esto nos permite actualizar la masa de los nodos, la rigidez de los muelles y el paso de integración efectivo en tiempo de ejecución.
 
-        if (clothMassChangeCheck != clothMass)
+        if (objectDensityChangeCheck != objectDensity)
         {
             UpdateNodeMass();
-            clothMassChangeCheck = clothMass;
+            objectDensityChangeCheck = objectDensity;
         }
 
-        if (flexionSpringStiffnessChangeCheck != flexionSpringStiffness)
+        if (tractionSpringStiffnessDensityChangeCheck != tractionSpringStiffnessDensity)
         {
             UpdateSpringStiffness();
-            flexionSpringStiffnessChangeCheck = flexionSpringStiffness;
-        }
-
-        if (tractionSpringStiffnessChangeCheck != tractionSpringStiffness)
-        {
-            UpdateSpringStiffness();
-            tractionSpringStiffnessChangeCheck = tractionSpringStiffness;
+            tractionSpringStiffnessDensityChangeCheck = tractionSpringStiffnessDensity;
         }
 
         if (hChangeCheck != h)
@@ -275,8 +268,10 @@ public class MassSpring : MonoBehaviour
         //Para cada muelle, se aplica la fuerza elástica a los dos nodos que lo componen, en sentidos opuestos por el principio de acción y reacción.
         foreach (Spring spring in envelopeSprings)
         {
-            spring.nodeA.force += -spring.k * (spring.lenght - spring.lenght0) * spring.dir;
-            spring.nodeB.force += spring.k * (spring.lenght - spring.lenght0) * spring.dir;
+            spring.nodeA.force += -(spring.springVolume / Mathf.Pow(spring.lenght0, 2)) * spring.k * (spring.lenght - spring.lenght0)
+                * ((spring.nodeA.pos - spring.nodeB.pos) / spring.lenght0);
+            spring.nodeB.force += (spring.springVolume / Mathf.Pow(spring.lenght0, 2)) * spring.k * (spring.lenght - spring.lenght0)
+                * ((spring.nodeA.pos - spring.nodeB.pos) / spring.lenght0);
             ApplyDampingSpring(spring); //Se aplica la fuerza de amortiguamiento de la deformación a cada uno de los nodos que componen el muelle.
         }
 
@@ -305,8 +300,10 @@ public class MassSpring : MonoBehaviour
         //Para cada muelle, se aplica la fuerza elástica a los dos nodos que lo componen, en sentidos opuestos por el principio de acción y reacción.
         foreach (Spring spring in envelopeSprings)
         {
-            spring.nodeA.force += -spring.k * (spring.lenght - spring.lenght0) * spring.dir;
-            spring.nodeB.force += spring.k * (spring.lenght - spring.lenght0) * spring.dir;
+            spring.nodeA.force += -(spring.springVolume/Mathf.Pow(spring.lenght0, 2)) * spring.k * (spring.lenght - spring.lenght0) 
+                * ((spring.nodeA.pos - spring.nodeB.pos) / spring.lenght0);
+            spring.nodeB.force += (spring.springVolume / Mathf.Pow(spring.lenght0, 2)) * spring.k * (spring.lenght - spring.lenght0)
+                * ((spring.nodeA.pos - spring.nodeB.pos) / spring.lenght0);
             ApplyDampingSpring(spring); //Se aplica la fuerza de amortiguamiento de la deformación a cada uno de los nodos que componen el muelle.
         }
 
@@ -362,7 +359,7 @@ public class MassSpring : MonoBehaviour
     {
         foreach (Node node in envelopeNodes)
         {
-            node.mass = clothMass / assetVertices.Length;
+            node.mass = objectDensity / assetVertices.Length;
         }
     }
 
@@ -372,14 +369,7 @@ public class MassSpring : MonoBehaviour
     {
         foreach (Spring spring in envelopeSprings)
         {
-            if (spring.springType == "flexion")
-            {
-                spring.k = flexionSpringStiffness;
-            }
-            else
-            {
-                spring.k = tractionSpringStiffness;
-            }
+            spring.k = tractionSpringStiffnessDensity;
         }
     }
 

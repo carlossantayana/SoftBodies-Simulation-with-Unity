@@ -10,18 +10,21 @@ namespace Assets.Scripts
         public float lenght; //Longitud del muelle en un instante.
         public float lenght0; //Longitud en reposo del muelle.
         public Vector3 dir; //Dirección del muelle desde el nodo B al nodo A.
-        public string springType; //string que almacena si se trata de un muelle de tracción o de flexión.
+        public float tetrahedronContainerVolume;
+        public float springVolume;
 
         //Cada muelle conecta dos nodos:
         public Node nodeA;
         public Node nodeB;
 
-        public Spring(float springStiffness, Node nodeA, Node nodeB, string springType) //Constructor de la clase muelle que lo inicializa a su estado inicial.
+        public Spring(float springStiffness, Node nodeA, Node nodeB, float volume) //Constructor de la clase muelle que lo inicializa a su estado inicial.
         {
             k = springStiffness;
             this.nodeA = nodeA;
             this.nodeB = nodeB;
-            this.springType = springType;
+            tetrahedronContainerVolume = volume;
+
+            springVolume = tetrahedronContainerVolume / 6;
 
             dir = nodeA.pos - nodeB.pos; //Vector dirección del muelle que va del nodo B al nodo A.
 

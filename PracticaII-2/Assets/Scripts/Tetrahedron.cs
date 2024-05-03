@@ -10,9 +10,11 @@ namespace Assets.Scripts
         public Node node2;
         public Node node3;
 
-        private float volume;
+        public float volume;
+        public float mass;
+        private float density;
 
-        public Tetrahedron(Node node0, Node node1, Node node2, Node node3)
+        public Tetrahedron(Node node0, Node node1, Node node2, Node node3, float density)
         {
             this.node0 = node0;
             this.node1 = node1;
@@ -20,6 +22,8 @@ namespace Assets.Scripts
             this.node3 = node3;
 
             volume = CalculateVolume(this.node0.pos, this.node1.pos, this.node2.pos, this.node3.pos);
+            this.density = density;
+            mass = this.density * volume;
         }
 
         private float CalculateVolume(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)

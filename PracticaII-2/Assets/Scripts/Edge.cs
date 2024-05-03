@@ -8,9 +8,10 @@ public class Edge : IComparable<Edge>
 {
     public int vertexA;
     public int vertexB;
+    public float tetrahedronContainerVolume;
 
     //El constructor inserta los vértices A y B de forma ordenada.
-    public Edge(int vertexA, int vertexB)
+    public Edge(int vertexA, int vertexB, float volume)
     {
         if (vertexA <= vertexB)
         {
@@ -22,6 +23,8 @@ public class Edge : IComparable<Edge>
             this.vertexA = vertexB;
             this.vertexB = vertexA;
         }
+
+        tetrahedronContainerVolume = volume;
     }
 
     //Implementamos el método CompareTo de la interfaz IComparable para poder ordenar los objetos Edge dentro de una lista.
