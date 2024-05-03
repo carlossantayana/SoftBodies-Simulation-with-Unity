@@ -3,19 +3,19 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class Tetrahedron : MonoBehaviour
+    public class Tetrahedron
     {
+        Node node1;
+        Node node2;
+        Node node3;
+        Node node4;
 
-        // Use this for initialization
-        void Start()
+        public Tetrahedron(Node node1, Node node2, Node node3, Node node4)
         {
-
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
+            this.node1 = node1;
+            this.node2 = node2;
+            this.node3 = node3;
+            this.node4 = node4;
         }
     }
 }

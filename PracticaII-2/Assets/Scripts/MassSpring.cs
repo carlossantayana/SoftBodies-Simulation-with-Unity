@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
-//Componente que permite animar una tela utilizando el método masa-muelle.
+//Componente que permite animar un sólido 3D deformable utilizando el método masa-muelle.
+//En este caso, las físicas actuarán sobre un mallado de tetraedros que envuelve el asset visual, y los vértices de este asset visual seguirán el movimiento de el mallado
+//previamente mencionado, aplicando un proceso de skinning.
 public class MassSpring : MonoBehaviour
 {
     public bool paused; //Booleano que se encarga de pausar y reanudar la animación.
@@ -19,17 +21,21 @@ public class MassSpring : MonoBehaviour
 
     public Integration integrationMethod; //Variable con la que escoger el método de integración a utilizar.
 
-    Mesh mesh; //Mallado triangular de la tela.
-    Vector3[] oldVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
-    public TextAsset nodesFile;
-    Vector3[] vertices;
-    List<Node> nodes; //Lista de objetos de la clase nodo que almacenan las propiedas físicas de los vértices del mallado para el cálculo de la animación.
-    List<Spring> springs = new List<Spring>(); //Lista de objetos de la clase muelle que almacena las propiedades físicas de cada muelle y los 2 vértices que lo componen
-                                               //para el cálculo de la animación.
-    int[] triangles; //Lista que almacena 3 enteros por triángulo de la malla.
-    public TextAsset tetrahedronsFile;
-    int[] tetrahedrons;
-    List<Edge> edges = new List<Edge>(); //Lista que almacena todas las aristas de la malla.
+    Mesh assetMesh; //Mallado triangular del objeto 3D.
+    Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
+
+    public TextAsset nodesFile; //Documento de texto que contiene las coordenadas iniciales de los vértices del mallado de tetraedros que sirve de volumen envolvente.
+    Vector3[] envelopeVertices; //Array que almacena las posiciones de los vértices de la envolvente (extraidas del documento anterior).
+
+    List<Node> envelopeNodes; //Lista de objetos de la clase nodo que almacenan las propiedas físicas de los vértices del mallado de tetraedros para el
+                              //cálculo de la animación.
+    List<Spring> envelopeSprings = new List<Spring>(); //Lista de objetos de la clase muelle que almacena las propiedades físicas de cada muelle y los 2 vértices
+                                                       //del mallado de tetraedros que lo componen para el cálculo de la animación.
+
+    public TextAsset tetrahedronsFile; //Documento de texto que almacena los índices de los cuatro vértices de cada tetraedro.
+    int[] tetrahedrons; //Array que almacena cuatro enteros por tetraedro (extraidos del documento anterior).
+    List<Edge> edges = new List<Edge>(); //Lista que almacena todas las aristas de la malla de tetraedros.
+    List<Tetrahedron> tetrahedronsList = new List<Tetrahedron>(); //Lista que almacena los tetraedros del mallado con referencias a los nodos que lo componen.
 
     public float clothMass = 1f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
     private float clothMassChangeCheck; //Variable para comprobar si cambió el valor de la masa.
@@ -60,6 +66,7 @@ public class MassSpring : MonoBehaviour
     {
         paused = true; //Al comienzo de la ejecución, la animación se encuentra pausada.
 
+        //Se leen los ficheros del volumen envolvente para almacenar la posición de los vértices y cuales conforman cada tetraedro.
         ReadNodesFile();
         ReadTetrahedronsFile();
 
@@ -75,21 +82,23 @@ public class MassSpring : MonoBehaviour
         h_def = h / substeps; //El paso efectivo es igual al paso base divido entre el número de subpasos a realizar por frame. Se utiliza finalmente un paso inferior,
                               //lo que supone controlar mejor el margen de error.
 
-        //mesh = gameObject.GetComponent<MeshFilter>().mesh; //Se almacena una referencia al mallado del gameObject.
-        //oldVertices = mesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado en un array.
-        nodes = new List<Node>(vertices.Length); //Se crea una lista con tantos nodos como vértices.
+        assetMesh = gameObject.GetComponentInChildren<MeshFilter>().mesh; //Se almacena una referencia al mallado del asset.
+                                                                          //Al haberse importado un ".obj", el mallado del objeto se encuentra en un objeto hijo.
+        assetVertices = assetMesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado del asset en un array.
 
-        for (int i = 0; i < vertices.Length; i++)
+        envelopeNodes = new List<Node>(envelopeVertices.Length); //Se crea una lista con tantos nodos como vértices del mallado de tetraedros.
+
+        for (int i = 0; i < envelopeVertices.Length; i++)
         {
             //Se insertan en la lista cada uno de los vértices, almacenándose su identificador, su posición en coordenadas globales,
             //y la parte proporcional que le corresponde de la masa total de la tela.
-            nodes.Add(new Node(i, transform.TransformPoint(vertices[i]), clothMass / vertices.Length));
+            envelopeNodes.Add(new Node(i, transform.TransformPoint(envelopeVertices[i]), clothMass / envelopeVertices.Length));
         }
 
 
-        foreach (Node node in nodes) //Para cada nodo
+        foreach (Node node in envelopeNodes) //Para cada nodo del mallado de tetraedros
         {
-            //Se buscan los Fixer hijos de la tela.
+            //Se buscan los Fixer hijos del objeto 3D.
             foreach (Fixer fixer in gameObject.GetComponentsInChildren<Fixer>()) //Para cada Fixer
             {
                 if (!node.fixedNode) //Si aún no se ha fijado
@@ -99,12 +108,9 @@ public class MassSpring : MonoBehaviour
             }
         }
 
-
-        //triangles = mesh.triangles; //Array que almacena en 3 posiciones consecutivas los índices de los vértices de cada triángulo.
-
-        for (int i = 0; i < tetrahedrons.Length; i += 4) //Recorremos los triángulos.
+        for (int i = 0; i < tetrahedrons.Length; i += 4) //Recorremos los tetraedros.
         {
-            //Se crean las 3 aristas del triángulo
+            //Se crean las 6 aristas del tetraedro.
             Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1]);
             Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2]);
             Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3]);
@@ -114,6 +120,9 @@ public class MassSpring : MonoBehaviour
 
             //Se añaden al array de aristas.
             edges.Add(A); edges.Add(B); edges.Add(C); edges.Add(D); edges.Add(E); edges.Add(F);
+
+            //Se crea el tetraedro con referencias a los nodos de los que está compuesto y se añade a la lista de tetraedros.
+            tetrahedronsList.Add(new Tetrahedron(envelopeNodes[tetrahedrons[i]], envelopeNodes[tetrahedrons[i + 1]], envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]]));
         }
 
         //Para eliminar aristas duplicadas y crear la estructura DCEL se utiliza el siguiente algoritmo de coste O(N*log(N)):
@@ -131,7 +140,7 @@ public class MassSpring : MonoBehaviour
             else //Si no
             {
                 //Agregamos un muelle de tracción en la arista. Se almacena el tipo de muelle en forma de string.
-                springs.Add(new Spring(tractionSpringStiffness, nodes[edges[i].vertexA], nodes[edges[i].vertexB], "traction"));
+                envelopeSprings.Add(new Spring(tractionSpringStiffness, envelopeNodes[edges[i].vertexA], envelopeNodes[edges[i].vertexB], "traction"));
             }
 
             previousEdge = edges[i]; //Actualizamos la referencia a la arista anterior.
@@ -205,7 +214,7 @@ public class MassSpring : MonoBehaviour
                     break;
             }
 
-            foreach (Spring spring in springs) //Se recorre la lista de muelles tras realizar la integración.
+            foreach (Spring spring in envelopeSprings) //Se recorre la lista de muelles tras realizar la integración.
             {
                 spring.UpdateSpring(); //Se recalculan los datos del muelle en el siguiente instante.
             }
@@ -223,7 +232,7 @@ public class MassSpring : MonoBehaviour
 
     void IntegrateExplicitEuler() //Método que realiza la integración de la velocidad y la posición utilizando Euler Explícito.
     {
-        foreach (Node node in nodes) //Para cada nodo
+        foreach (Node node in envelopeNodes) //Para cada nodo
         {
             if (!node.fixedNode) //Que no sea fijo
             {
@@ -240,14 +249,14 @@ public class MassSpring : MonoBehaviour
         }
 
         //Para cada muelle, se aplica la fuerza elástica a los dos nodos que lo componen, en sentidos opuestos por el principio de acción y reacción.
-        foreach (Spring spring in springs)
+        foreach (Spring spring in envelopeSprings)
         {
             spring.nodeA.force += -spring.k * (spring.lenght - spring.lenght0) * spring.dir;
             spring.nodeB.force += spring.k * (spring.lenght - spring.lenght0) * spring.dir;
             ApplyDampingSpring(spring); //Se aplica la fuerza de amortiguamiento de la deformación a cada uno de los nodos que componen el muelle.
         }
 
-        foreach (Node node in nodes) //Para cada nodo
+        foreach (Node node in envelopeNodes) //Para cada nodo
         {
             if (!node.fixedNode) //Que no sea fijo
             {
@@ -258,7 +267,7 @@ public class MassSpring : MonoBehaviour
 
     void IntegrateSymplecticEuler() //Método que realiza la integración de la velocidad y la posición utilizando Euler Simpléctico.
     {
-        foreach (Node node in nodes) //Para cada nodo
+        foreach (Node node in envelopeNodes) //Para cada nodo
         {
             node.force = -node.mass * g; //Se aplica la fuerza de la gravedad.
 
@@ -270,14 +279,14 @@ public class MassSpring : MonoBehaviour
         }
 
         //Para cada muelle, se aplica la fuerza elástica a los dos nodos que lo componen, en sentidos opuestos por el principio de acción y reacción.
-        foreach (Spring spring in springs)
+        foreach (Spring spring in envelopeSprings)
         {
             spring.nodeA.force += -spring.k * (spring.lenght - spring.lenght0) * spring.dir;
             spring.nodeB.force += spring.k * (spring.lenght - spring.lenght0) * spring.dir;
             ApplyDampingSpring(spring); //Se aplica la fuerza de amortiguamiento de la deformación a cada uno de los nodos que componen el muelle.
         }
 
-        foreach (Node node in nodes) //Para cada nodo
+        foreach (Node node in envelopeNodes) //Para cada nodo
         {
             if (!node.fixedNode) //Que no sea fijo
             {
@@ -307,7 +316,7 @@ public class MassSpring : MonoBehaviour
     {
         if (Application.isPlaying) //Se dibujarán únicamente durante la ejecución de la aplicación, pues es al inicio de esta que se crean los muelles y nodos de la tela.
         {
-            foreach (Spring spring in springs) //Se recorre la lista de muelles, y en función del tipo del muelle se utiliza un color u otro.
+            foreach (Spring spring in envelopeSprings) //Se recorre la lista de muelles, y en función del tipo del muelle se utiliza un color u otro.
             {
                 if (spring.springType == "flexion")
                 {
@@ -323,7 +332,7 @@ public class MassSpring : MonoBehaviour
 
             Gizmos.color = Color.black; //Se cambia a color negro.
 
-            foreach (Node node in nodes) //Se recorren los nodos.
+            foreach (Node node in envelopeNodes) //Se recorren los nodos.
             {
                 Gizmos.DrawSphere(node.pos, 0.2f); //Se pinta una esfera en cada uno de los nodos.
             }
@@ -333,9 +342,9 @@ public class MassSpring : MonoBehaviour
     //Método que se llama en caso de que la masa de la tela se haya modificado desde el inspector, actualizando las masas de cada uno de los nodos.
     private void UpdateNodeMass()
     {
-        foreach (Node node in nodes)
+        foreach (Node node in envelopeNodes)
         {
-            node.mass = clothMass / oldVertices.Length;
+            node.mass = clothMass / assetVertices.Length;
         }
     }
 
@@ -343,7 +352,7 @@ public class MassSpring : MonoBehaviour
     //respetando sus tipos.
     private void UpdateSpringStiffness()
     {
-        foreach (Spring spring in springs)
+        foreach (Spring spring in envelopeSprings)
         {
             if (spring.springType == "flexion")
             {
@@ -399,6 +408,6 @@ public class MassSpring : MonoBehaviour
             vertices.Add(vertex);
         }
 
-        this.vertices = vertices.ToArray();
+        this.envelopeVertices = vertices.ToArray();
     }
 }
