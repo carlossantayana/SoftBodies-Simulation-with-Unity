@@ -3,19 +3,24 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class Point : MonoBehaviour
+    public class Point
     {
+        public Vector3 pos;
+        private Tetrahedron containerTetrahedron;
+        private Vector4 barycentricCoordinates;
 
-        // Use this for initialization
-        void Start()
+        public Point(Vector3 position, Tetrahedron container)
         {
+            this.pos = position;
+            this.containerTetrahedron = container;
 
+            this.barycentricCoordinates = this.containerTetrahedron.CalculateBarycentricCoordinates(this.pos);
         }
 
-        // Update is called once per frame
-        void Update()
+        public void UpdatePoint()
         {
-
+            pos = barycentricCoordinates[0] * containerTetrahedron.node0.pos + barycentricCoordinates[1] * containerTetrahedron.node1.pos
+                + barycentricCoordinates[2] * containerTetrahedron.node2.pos + barycentricCoordinates[3] * containerTetrahedron.node3.pos;
         }
     }
 }
