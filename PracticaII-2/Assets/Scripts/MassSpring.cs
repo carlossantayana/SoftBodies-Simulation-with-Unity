@@ -105,7 +105,7 @@ public class MassSpring : MonoBehaviour
         {
             //Se crea el tetraedro con referencias a los nodos de los que está compuesto y se añade a la lista de tetraedros.
             Tetrahedron tetrahedron = new Tetrahedron(envelopeNodes[tetrahedrons[i]], envelopeNodes[tetrahedrons[i + 1]],
-                envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]]);
+                envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]], objectDensity);
             tetrahedronsList.Add(tetrahedron);
 
             //Se crean las 6 aristas del tetraedro.
