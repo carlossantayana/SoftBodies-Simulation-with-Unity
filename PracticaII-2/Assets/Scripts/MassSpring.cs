@@ -38,10 +38,10 @@ public class MassSpring : MonoBehaviour
     Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
     List<Point> assetNodes;
 
-    public float objectDensity = 1f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
+    public float objectDensity = 0.005f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
     private float objectDensityChangeCheck; //Variable para comprobar si cambió el valor de la masa.
 
-    public float tractionSpringStiffnessDensity = 20f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
+    public float tractionSpringStiffnessDensity = 10f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
     private float tractionSpringStiffnessDensityChangeCheck; //Variable para comprobar si cambió el valor de la rigidez de tracción.
 
     public float dAbsolute = 0.002f; //Constante de amortiguamiento (damping) absoluto sobre la velocidad de los nodos.
@@ -357,9 +357,12 @@ public class MassSpring : MonoBehaviour
     //Método que se llama en caso de que la masa de la tela se haya modificado desde el inspector, actualizando las masas de cada uno de los nodos.
     private void UpdateNodeMass()
     {
-        foreach (Node node in envelopeNodes)
+        foreach (Tetrahedron tetrahedron in tetrahedronsList)
         {
-            node.mass = objectDensity / assetVertices.Length;
+            tetrahedron.node0.mass = tetrahedron.mass / 4;
+            tetrahedron.node1.mass = tetrahedron.mass / 4;
+            tetrahedron.node2.mass = tetrahedron.mass / 4;
+            tetrahedron.node3.mass = tetrahedron.mass / 4;
         }
     }
 
