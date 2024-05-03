@@ -6,7 +6,7 @@ using System.Globalization;
 using UnityEngine;
 
 //Componente que permite animar un sólido 3D deformable utilizando el método masa-muelle.
-//En este caso, las físicas actuarán sobre un mallado de tetraedros que envuelve el asset visual, y los vértices de este asset visual seguirán el movimiento de el mallado
+//En este caso, las físicas actuarán sobre un mallado de tetraedros que envuelve el asset visual, y los vértices de este asset visual seguirán el movimiento del mallado
 //previamente mencionado, aplicando un proceso de skinning.
 public class MassSpring : MonoBehaviour
 {
@@ -66,7 +66,7 @@ public class MassSpring : MonoBehaviour
     {
         paused = true; //Al comienzo de la ejecución, la animación se encuentra pausada.
 
-        //Se leen los ficheros del volumen envolvente para almacenar la posición de los vértices y cuales conforman cada tetraedro.
+        //Se leen los ficheros del volumen envolvente para almacenar la posición de sus vértices y cuales conforman cada tetraedro.
         ReadNodesFile();
         ReadTetrahedronsFile();
 
@@ -314,7 +314,8 @@ public class MassSpring : MonoBehaviour
 
     private void OnDrawGizmos() //Función de evento de Unity que se ejecuta en cada vuelta del bucle del juego para redibujar los Gizmos.
     {
-        if (Application.isPlaying) //Se dibujarán únicamente durante la ejecución de la aplicación, pues es al inicio de esta que se crean los muelles y nodos de la tela.
+        if (Application.isPlaying) //Se dibujarán únicamente durante la ejecución de la aplicación, pues es al inicio de esta que se crean
+                                   //los muelles y nodos de la envolvente.
         {
             foreach (Spring spring in envelopeSprings) //Se recorre la lista de muelles, y en función del tipo del muelle se utiliza un color u otro.
             {
