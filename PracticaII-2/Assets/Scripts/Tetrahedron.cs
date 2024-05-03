@@ -49,7 +49,9 @@ namespace Assets.Scripts
             float w2 = barycentricCoordinates[2];
             float w3 = barycentricCoordinates[3];
 
-            if(w0 >= 0 && w1 >= 0 && w2 >= 0 && w3 >= 0)
+            int totalWeight = (int)Mathf.Round(w0 + w1 + w2 + w3);
+
+            if(totalWeight == 1)
             {
                 return true;
             }
