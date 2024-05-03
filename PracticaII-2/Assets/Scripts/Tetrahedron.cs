@@ -40,5 +40,23 @@ namespace Assets.Scripts
 
             return new Vector4(w0, w1, w2, w3);
         }
+
+        public bool TetrahedronContainsPoint(Vector3 P)
+        {
+            Vector4 barycentricCoordinates = CalculateBarycentricCoordinates(P);
+            float w0 = barycentricCoordinates[0];
+            float w1 = barycentricCoordinates[1];
+            float w2 = barycentricCoordinates[2];
+            float w3 = barycentricCoordinates[3];
+
+            if(w0 >= 0 && w1 >= 0 && w2 >= 0 && w3 >= 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 }

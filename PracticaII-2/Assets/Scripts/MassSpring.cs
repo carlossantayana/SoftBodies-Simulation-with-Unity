@@ -21,9 +21,6 @@ public class MassSpring : MonoBehaviour
 
     public Integration integrationMethod; //Variable con la que escoger el método de integración a utilizar.
 
-    Mesh assetMesh; //Mallado triangular del objeto 3D.
-    Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
-
     public TextAsset nodesFile; //Documento de texto que contiene las coordenadas iniciales de los vértices del mallado de tetraedros que sirve de volumen envolvente.
     Vector3[] envelopeVertices; //Array que almacena las posiciones de los vértices de la envolvente (extraidas del documento anterior).
 
@@ -36,6 +33,10 @@ public class MassSpring : MonoBehaviour
     int[] tetrahedrons; //Array que almacena cuatro enteros por tetraedro (extraidos del documento anterior).
     List<Edge> edges = new List<Edge>(); //Lista que almacena todas las aristas de la malla de tetraedros.
     List<Tetrahedron> tetrahedronsList = new List<Tetrahedron>(); //Lista que almacena los tetraedros del mallado con referencias a los nodos que lo componen.
+
+    Mesh assetMesh; //Mallado triangular del objeto 3D.
+    Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
+    List<Point> assetNodes;
 
     public float clothMass = 1f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
     private float clothMassChangeCheck; //Variable para comprobar si cambió el valor de la masa.
@@ -81,10 +82,6 @@ public class MassSpring : MonoBehaviour
 
         h_def = h / substeps; //El paso efectivo es igual al paso base divido entre el número de subpasos a realizar por frame. Se utiliza finalmente un paso inferior,
                               //lo que supone controlar mejor el margen de error.
-
-        assetMesh = gameObject.GetComponentInChildren<MeshFilter>().mesh; //Se almacena una referencia al mallado del asset.
-                                                                          //Al haberse importado un ".obj", el mallado del objeto se encuentra en un objeto hijo.
-        assetVertices = assetMesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado del asset en un array.
 
         envelopeNodes = new List<Node>(envelopeVertices.Length); //Se crea una lista con tantos nodos como vértices del mallado de tetraedros.
 
@@ -144,6 +141,28 @@ public class MassSpring : MonoBehaviour
             }
 
             previousEdge = edges[i]; //Actualizamos la referencia a la arista anterior.
+        }
+
+        assetMesh = gameObject.GetComponentInChildren<MeshFilter>().mesh; //Se almacena una referencia al mallado del asset.
+                                                                          //Al haberse importado un ".obj", el mallado del objeto se encuentra en un objeto hijo.
+        assetVertices = assetMesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado del asset en un array.
+
+        assetNodes = new List<Point>(assetVertices.Length);
+
+        for (int i = 0; i < assetVertices.Length; i++)
+        {
+            assetNodes.Add(new Point(transform.TransformPoint(assetVertices[i])));
+        }
+
+        foreach (Point point in assetNodes)
+        {
+            foreach (Tetrahedron tetrahedron in tetrahedronsList)
+            {
+                if (tetrahedron.TetrahedronContainsPoint(point.pos))
+                {
+                    point.SetContainerTetrahedron(tetrahedron);
+                }
+            }
         }
     }
 
@@ -219,14 +238,19 @@ public class MassSpring : MonoBehaviour
                 spring.UpdateSpring(); //Se recalculan los datos del muelle en el siguiente instante.
             }
 
-            //for (int i = 0; i < oldVertices.Length; i++)
-            //{
-            //    //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los nodos.
-            //    oldVertices[i] = transform.InverseTransformPoint(nodes[i].pos);
-            //}
+            foreach (Point point in assetNodes)
+            {
+                point.UpdatePoint();
+            }
 
-            //mesh.vertices = oldVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
-            //mesh.RecalculateBounds(); //Se recalculan los bordes de la malla.
+            for (int i = 0; i < assetVertices.Length; i++)
+            {
+                //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los nodos.
+                assetVertices[i] = transform.InverseTransformPoint(assetNodes[i].pos);
+            }
+
+            assetMesh.vertices = assetVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
+            assetMesh.RecalculateBounds(); //Se recalculan los bordes de la malla.
         }
     }
 
