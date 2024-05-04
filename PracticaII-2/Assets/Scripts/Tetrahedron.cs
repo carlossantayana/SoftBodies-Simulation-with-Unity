@@ -52,15 +52,26 @@ namespace Assets.Scripts
 
         public bool TetrahedronContainsPoint(Vector3 P)
         {
-            Vector4 barycentricCoordinates = CalculateBarycentricCoordinates(P);
-            float w0 = barycentricCoordinates[0];
-            float w1 = barycentricCoordinates[1];
-            float w2 = barycentricCoordinates[2];
-            float w3 = barycentricCoordinates[3];
+            Vector3 v01 = node1.pos - node0.pos;
+            Vector3 v02 = node2.pos - node0.pos;
+            Vector3 normal012 = Vector3.Cross(v02, v01).normalized;
+            Vector3 v0P = (P - node0.pos).normalized;
+            float dot012 = Vector3.Dot(normal012, v0P);
 
-            int totalWeight = (int)Mathf.Round(w0 + w1 + w2 + w3);
+            Vector3 v03 = node3.pos - node0.pos;
+            Vector3 normal013 = Vector3.Cross(v01, v03).normalized;
+            float dot013 = Vector3.Dot(normal013, v0P);
 
-            if(totalWeight == 1)
+            Vector3 v21 = node1.pos - node2.pos;
+            Vector3 v23 = node3.pos - node2.pos;
+            Vector3 normal123 = Vector3.Cross(v23, v21).normalized;
+            Vector3 v2P = (P - node2.pos).normalized;
+            float dot123 = Vector3.Dot(normal123, v2P);
+
+            Vector3 normal023 = Vector3.Cross(v03, v02).normalized;
+            float dot023 = Vector3.Dot(normal023, v0P);
+
+            if (dot012 >= 0 && dot013 >= 0 && dot123 >= 0 && dot023 >= 0)
             {
                 return true;
             }
