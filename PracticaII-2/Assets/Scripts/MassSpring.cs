@@ -39,10 +39,8 @@ public class MassSpring : MonoBehaviour
     List<Point> assetNodes;
 
     public float objectDensity = 0.005f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
-    private float objectDensityChangeCheck; //Variable para comprobar si cambió el valor de la masa.
 
     public float tractionSpringStiffnessDensity = 10f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
-    private float tractionSpringStiffnessDensityChangeCheck; //Variable para comprobar si cambió el valor de la rigidez de tracción.
 
     public float dAbsolute = 0.002f; //Constante de amortiguamiento (damping) absoluto sobre la velocidad de los nodos.
     public float dDeformation = 0.02f; //Constante de amortiguamiento de la deformación de los muelles.
@@ -69,8 +67,6 @@ public class MassSpring : MonoBehaviour
         ReadTetrahedronsFile();
 
         //Se inicializa el valor de los comprobadores al valor inicial de las variables originales.
-        objectDensityChangeCheck = objectDensity;
-        tractionSpringStiffnessDensityChangeCheck = tractionSpringStiffnessDensity;
         hChangeCheck = h;
         substepsChangeCheck = substeps;
 
@@ -109,12 +105,12 @@ public class MassSpring : MonoBehaviour
             tetrahedronsList.Add(tetrahedron);
 
             //Se crean las 6 aristas del tetraedro.
-            Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1], tetrahedron.volume);
-            Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2], tetrahedron.volume);
-            Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3], tetrahedron.volume);
-            Edge D = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 2], tetrahedron.volume);
-            Edge E = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 3], tetrahedron.volume);
-            Edge F = new Edge(tetrahedrons[i + 2], tetrahedrons[i + 3], tetrahedron.volume);
+            Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1], tetrahedron.volume / 6);
+            Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2], tetrahedron.volume / 6);
+            Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3], tetrahedron.volume / 6);
+            Edge D = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 2], tetrahedron.volume / 6);
+            Edge E = new Edge(tetrahedrons[i + 1], tetrahedrons[i + 3], tetrahedron.volume / 6);
+            Edge F = new Edge(tetrahedrons[i + 2], tetrahedrons[i + 3], tetrahedron.volume / 6);
 
             //Se añaden al array de aristas.
             edges.Add(A); edges.Add(B); edges.Add(C); edges.Add(D); edges.Add(E); edges.Add(F);
@@ -125,18 +121,20 @@ public class MassSpring : MonoBehaviour
         edges.Sort(); //Se necesita tener las aristas ordenadas. De esta forma, al recorrer el array, podemos detectar si justo se repitió una arista.
 
         Edge previousEdge = null; //Almacenamos una referencia a la arista anterior
+        Spring previousSpring = null;
 
         for (int i = 0; i < edges.Count; i++) //Recorremos las aristas.
         {
             if (edges[i].Equals(previousEdge)) //Si la arista actual es igual a la anterior (es una arista repetida)
             {
-                Debug.Log("Repeated Edge!");
+                previousSpring.springVolume += edges[i].edgeVolume;
             }
             else //Si no
             {
                 //Agregamos un muelle de tracción en la arista. Se almacena el tipo de muelle en forma de string.
-                envelopeSprings.Add(new Spring(tractionSpringStiffnessDensity, envelopeNodes[edges[i].vertexA], envelopeNodes[edges[i].vertexB], 
-                    edges[i].tetrahedronContainerVolume));
+                previousSpring = new Spring(tractionSpringStiffnessDensity, envelopeNodes[edges[i].vertexA], envelopeNodes[edges[i].vertexB]);
+                previousSpring.springVolume += edges[i].edgeVolume;
+                envelopeSprings.Add(previousSpring);
             }
 
             previousEdge = edges[i]; //Actualizamos la referencia a la arista anterior.
@@ -176,18 +174,6 @@ public class MassSpring : MonoBehaviour
         //En caso de que alguna de las copias de los valores originales difiera de este (pues puede ser modificado desde el inspector), se actualizará la masa de los nodos,
         //la rigidez de los muelles, o el tamaño del paso efectivo de integración. A su vez, se actualizará la copia, una vez realizados los cambios.
         //Esto nos permite actualizar la masa de los nodos, la rigidez de los muelles y el paso de integración efectivo en tiempo de ejecución.
-
-        if (objectDensityChangeCheck != objectDensity)
-        {
-            UpdateNodeMass();
-            objectDensityChangeCheck = objectDensity;
-        }
-
-        if (tractionSpringStiffnessDensityChangeCheck != tractionSpringStiffnessDensity)
-        {
-            UpdateSpringStiffness();
-            tractionSpringStiffnessDensityChangeCheck = tractionSpringStiffnessDensity;
-        }
 
         if (hChangeCheck != h)
         {
@@ -353,28 +339,6 @@ public class MassSpring : MonoBehaviour
             }
         }
     } //Estos Gizmos nos permiten ver en tiempo real el movimiento de los vértices y los muelles.
-
-    //Método que se llama en caso de que la masa de la tela se haya modificado desde el inspector, actualizando las masas de cada uno de los nodos.
-    private void UpdateNodeMass()
-    {
-        foreach (Tetrahedron tetrahedron in tetrahedronsList)
-        {
-            tetrahedron.node0.mass = tetrahedron.mass / 4;
-            tetrahedron.node1.mass = tetrahedron.mass / 4;
-            tetrahedron.node2.mass = tetrahedron.mass / 4;
-            tetrahedron.node3.mass = tetrahedron.mass / 4;
-        }
-    }
-
-    //Método que se llama en caso de que se haya modificado la rigidez de los muelles desde el inspector, actualizando las constantes de rigidez de cada uno de los muelles,
-    //respetando sus tipos.
-    private void UpdateSpringStiffness()
-    {
-        foreach (Spring spring in envelopeSprings)
-        {
-            spring.k = tractionSpringStiffnessDensity;
-        }
-    }
 
     //Método que se llama en caso de que se haya modificado el tamaño del paso de integración o el número de subpasos a realizar por frame, actualizando el paso efectivo.
     private void UpdateIntegrationStep()

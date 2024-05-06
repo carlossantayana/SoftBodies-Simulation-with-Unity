@@ -25,10 +25,10 @@ namespace Assets.Scripts
             this.density = density;
             mass = this.density * volume;
 
-            this.node0.mass = mass / 4;
-            this.node1.mass = mass / 4;
-            this.node2.mass = mass / 4;
-            this.node3.mass = mass / 4;
+            this.node0.mass += mass / 4;
+            this.node1.mass += mass / 4;
+            this.node2.mass += mass / 4;
+            this.node3.mass += mass / 4;
         }
 
         private float CalculateVolume(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
