@@ -38,9 +38,9 @@ public class MassSpring : MonoBehaviour
     Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
     List<Point> assetNodes;
 
-    public float objectDensity = 0.005f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
+    public float objectDensity = 0.005f; //Densidad de masa del objeto.
 
-    public float tractionSpringStiffnessDensity = 100f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
+    public float tractionSpringStiffnessDensity = 100f; //Constante de densidad de rigidez de los muelles de tracción.
 
     public float dAbsolute = 0.002f; //Constante de amortiguamiento (damping) absoluto sobre la velocidad de los nodos.
     public float dDeformation = 0.02f; //Constante de amortiguamiento de la deformación de los muelles.
@@ -346,6 +346,7 @@ public class MassSpring : MonoBehaviour
         h_def = h / substeps;
     }
 
+    //Parser para leer el fichero de tetraedros.
     void ReadTetrahedronsFile()
     {
         List<int> tetrahedrons = new List<int>();
@@ -366,6 +367,7 @@ public class MassSpring : MonoBehaviour
         this.tetrahedrons = tetrahedrons.ToArray();
     }
 
+    //Parser para leer el fichero de nodos.
     void ReadNodesFile()
     {
         List<Vector3> vertices = new List<Vector3>();

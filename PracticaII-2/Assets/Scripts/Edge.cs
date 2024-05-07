@@ -3,14 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//Clase Arista. Representa una arista de una malla de un objeto 3D y el vértice opuesto del triángulo al que forma parte.
+//Clase Arista. Representa una arista de una malla envolvente de tetraedros de un objeto 3D.
 public class Edge : IComparable<Edge> 
 {
+    //Par de vértices que componen una de las aristas del tetraedro.
     public int vertexA;
     public int vertexB;
-    public float edgeVolume;
 
-    //El constructor inserta los vértices A y B de forma ordenada.
+    public float edgeVolume; //Volumen que le corresponde a una arista perteneciente a un tetraedro. Al tener estos 6 aristas, se trata de 1/6 del
+                             //volumen total del tetraedro contenedor.
+
+    //El constructor inserta los vértices A y B de forma ordenada y recibe la parte de volumen que le corresponde.
     public Edge(int vertexA, int vertexB, float volume)
     {
         if (vertexA <= vertexB)

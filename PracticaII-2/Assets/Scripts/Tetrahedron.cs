@@ -3,17 +3,20 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
+    //Clase Tetraedro. Representa un tetraedro del mallado envolvente del objeto 3D.
     public class Tetrahedron
     {
+        //Cada tetraedro está compuesto de 4 nodos:
         public Node node0;
         public Node node1;
         public Node node2;
         public Node node3;
 
-        public float volume;
-        public float mass;
-        private float density;
+        public float volume; //Volumen del tetraedro. Se calcula a partir de las posiciones de sus vértices.
+        public float mass; //Masa del tetraedro. Dadas la densidad y el volumen, se obtiene la masa de este.
+        private float density; //Densidad definida para el objeto 3D, se recibe en el constructor.
 
+        //Constructor de objetos tetraedro. Recibe los 4 nodos que lo componen y la densidad del objeto 3D.
         public Tetrahedron(Node node0, Node node1, Node node2, Node node3, float density)
         {
             this.node0 = node0;
@@ -21,22 +24,27 @@ namespace Assets.Scripts
             this.node2 = node2;
             this.node3 = node3;
 
-            volume = CalculateVolume(this.node0.pos, this.node1.pos, this.node2.pos, this.node3.pos);
+            volume = CalculateVolume(this.node0.pos, this.node1.pos, this.node2.pos, this.node3.pos); //Se calcula el volumen a partir de las posiciones de sus nodos.
             this.density = density;
-            mass = this.density * volume;
+            mass = this.density * volume; //Se despeja la masa de la fórmula de la densidad y se calcula.
 
+            //Se reparte la masa del tetraedro entre sus cuatro nodos.
             this.node0.mass += mass / 4;
             this.node1.mass += mass / 4;
             this.node2.mass += mass / 4;
             this.node3.mass += mass / 4;
         }
 
-        private float CalculateVolume(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+        //Método que calcula el volumen de un tetraedro a partir de las posiciones de sus cuatro vértices.
+        //Para ello se aplica la siguiente fórmula: V = |(r1-r0)*(r2-r0)x(r3-r0)| / 6
+        private float CalculateVolume(Vector3 r0, Vector3 r1, Vector3 r2, Vector3 r3)
         {
-            Vector3 A = p1 - p0;
-            Vector3 B = p2 - p0;
-            Vector3 C = p3 - p0;
+            //Se utilizan A, B y C como vectores auxiliares para almacenar las restas de vectores posición.
+            Vector3 A = r1 - r0;
+            Vector3 B = r2 - r0;
+            Vector3 C = r3 - r0;
 
+            //Devuelve el volumen tras aplicar la fórmula.
             return Mathf.Abs(Vector3.Dot(A, Vector3.Cross(B, C))) / 6;
         }
 

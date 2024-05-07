@@ -4,13 +4,13 @@ using UnityEngine.UIElements;
 
 namespace Assets.Scripts
 {
-    public class Spring //Clase que representa un muelle que aporta elasticidad a un objeto en el modelo masa-muelle.
+    public class Spring //Clase que representa un muelle que aporta elasticidad a un mallado envolvente de tetraedros de un objeto 3D en el modelo masa-muelle.
     {
         public float k; //Constante de rigidez del muelle. A mayor k, más rígido será el muelle, oponiéndose a las deformaciones.
         public float lenght; //Longitud del muelle en un instante.
         public float lenght0; //Longitud en reposo del muelle.
         public Vector3 dir; //Dirección del muelle desde el nodo B al nodo A.
-        public float springVolume = 0;
+        public float springVolume = 0; //Volumen del muelle. Cada tetraedro al que pertenezca el muelle le aportará 1/6 de su volumen.
 
         //Cada muelle conecta dos nodos:
         public Node nodeA;

@@ -22,7 +22,7 @@ public class Wind : MonoBehaviour //Componente que se encarga de gestionar el ca
     private const int CYLINDER_DEFAULT_SIZE = 2; //Constante en la que almacenamos la longitud por defecto de un cilindro de escala 1.
     private int _cylinderMaxSize = 10; //Variable en la que asignar la longitud máxima que adquirirá el cilindro al alcanzar el viento su máxima intensidad.
 
-    private float _translationSpeed; //Velocidad a la que se moveran los "gizmos" utilizados para representar el viento.
+    private float _translationSpeed; //Velocidad a la que se moverán los "gizmos" utilizados para representar el viento.
 
     //Objetos que harán de "gizmos" para representar la intensidad y dirección del viento.
     GameObject intensity_gizmo;
