@@ -455,6 +455,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wind
       objectReference: {fileID: 0}
+    - target: {fileID: 8601238912392824385, guid: 2adca0608ef96ad4293ba24ceba087b2, type: 3}
+      propertyPath: maxWindForce
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -466,7 +470,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh-37050
+  m_Name: pb_Mesh-1246
   serializedVersion: 11
   m_SubMeshes:
   - serializedVersion: 2

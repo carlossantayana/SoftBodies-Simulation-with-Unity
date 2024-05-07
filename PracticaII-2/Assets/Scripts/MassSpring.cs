@@ -40,7 +40,7 @@ public class MassSpring : MonoBehaviour
 
     public float objectDensity = 0.005f; //Masa total de la tela, repartida equitativamente entre cada uno de los nodos de masa que la componen.
 
-    public float tractionSpringStiffnessDensity = 10f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
+    public float tractionSpringStiffnessDensity = 100f; //Constante de rigidez de los muelles de tracción. La tela no es muy elástica.
 
     public float dAbsolute = 0.002f; //Constante de amortiguamiento (damping) absoluto sobre la velocidad de los nodos.
     public float dDeformation = 0.02f; //Constante de amortiguamiento de la deformación de los muelles.

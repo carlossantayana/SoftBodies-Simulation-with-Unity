@@ -14,7 +14,7 @@ public class Wind : MonoBehaviour //Componente que se encarga de gestionar el ca
     [HideInInspector]
     public float WindIntensity { get { return _windIntensity; } set { _windIntensity = value; } }
 
-    public float maxWindForce = 1f; //Fuerza máxima que puede alcanzar el viento. Modificable desde el inspector.
+    public float maxWindForce = 4f; //Fuerza máxima que puede alcanzar el viento. Modificable desde el inspector.
 
     private float _rotationSpeed = 60f; //Velocidad con la que cambia la dirección del viento.
     private float _intensityIncrementationSpeed = 0.5f; //Velocidad con la que cambia la intensidad del viento.
