@@ -23,14 +23,14 @@ public class MassSpring : MonoBehaviour
 
     public TextAsset nodesFile; //Documento de texto que contiene las coordenadas iniciales de los vértices del mallado de tetraedros que sirve de volumen envolvente.
     Vector3[] envelopeVertices; //Array que almacena las posiciones de los vértices de la envolvente (extraidas del documento anterior).
+    public TextAsset tetrahedronsFile; //Documento de texto que almacena los índices de los cuatro vértices de cada tetraedro. Estos índices comienzan en 1.
+    int[] tetrahedrons; //Array que almacena cuatro enteros por tetraedro (extraidos del documento anterior). Estos índices comienzan en 0.
 
     List<Node> envelopeNodes; //Lista de objetos de la clase nodo que almacenan las propiedas físicas de los vértices del mallado de tetraedros para el
                               //cálculo de la animación.
     List<Spring> envelopeSprings = new List<Spring>(); //Lista de objetos de la clase muelle que almacenan las propiedades físicas de cada muelle y los 2 vértices
                                                        //que lo componen del mallado de tetraedros para el cálculo de la animación.
 
-    public TextAsset tetrahedronsFile; //Documento de texto que almacena los índices de los cuatro vértices de cada tetraedro. Estos índices comienzan en 1.
-    int[] tetrahedrons; //Array que almacena cuatro enteros por tetraedro (extraidos del documento anterior). Estos índices comienzan en 0.
     List<Edge> edges = new List<Edge>(); //Lista que almacena todas las aristas de la malla de tetraedros.
     List<Tetrahedron> tetrahedronsList = new List<Tetrahedron>(); //Lista que almacena los tetraedros del mallado con referencias a los nodos que lo componen.
 
@@ -49,10 +49,10 @@ public class MassSpring : MonoBehaviour
     public Vector3 g = new Vector3(0.0f, 9.8f, 0.0f); //Constante gravitacional.
 
     public float h = 0.01f; //Tamaño del paso de integración de las físicas de la animación.
-    private float hChangeCheck; //Variable para comprobar si cambió el valor de el paso de integración.
+    private float hChangeCheck; //Variable para comprobar si cambió el valor del paso de integración.
 
     public int substeps = 1; //Número de subpasos. Se divide la integración las veces que indique por frame.
-    private int substepsChangeCheck; //Variable para comprobar si cambió el valor de el número de substeps.
+    private int substepsChangeCheck; //Variable para comprobar si cambió el valor del número de substeps.
 
     private float h_def; //Paso efectivo finalmente utilizado en la integración. Puede diferir de h en caso de que substeps > 1.
 
@@ -63,18 +63,18 @@ public class MassSpring : MonoBehaviour
     {
         paused = true; //Al comienzo de la ejecución, la animación se encuentra pausada.
 
-        //Se leen los ficheros del volumen envolvente para almacenar la posición de sus vértices y cuales conforman cada tetraedro.
-        ReadNodesFile();
-        ReadTetrahedronsFile();
-
         //Se inicializa el valor de los comprobadores al valor inicial de las variables originales.
         hChangeCheck = h;
         substepsChangeCheck = substeps;
 
-        wind = GameObject.Find("Wind").GetComponent<Wind>(); //Se almacena el componente del viento del gameObject "Wind".
-
         h_def = h / substeps; //El paso efectivo es igual al paso base divido entre el número de subpasos a realizar por frame. Se utiliza finalmente un paso inferior,
                               //lo que supone controlar mejor el margen de error.
+
+        wind = GameObject.Find("Wind").GetComponent<Wind>(); //Se almacena el componente del viento del gameObject "Wind".
+
+        //Se leen los ficheros del volumen envolvente para almacenar la posición de sus vértices y cuales conforman cada tetraedro.
+        ReadNodesFile();
+        ReadTetrahedronsFile();
 
         envelopeNodes = new List<Node>(envelopeVertices.Length); //Se crea una lista con tantos nodos como vértices del mallado de tetraedros.
 
@@ -99,7 +99,8 @@ public class MassSpring : MonoBehaviour
 
         for (int i = 0; i < tetrahedrons.Length; i += 4) //Recorremos los tetraedros.
         {
-            //Se crea el tetraedro con referencias a los nodos de los que está compuesto y se añade a la lista de tetraedros.
+            //Se crea el tetraedro con referencias a los nodos de los que está compuesto y se añade a la lista de tetraedros. También se les pasa la densidad del objeto
+            //para que puedan calcular su masa y repartirla entre sus nodos.
             Tetrahedron tetrahedron = new Tetrahedron(envelopeNodes[tetrahedrons[i]], envelopeNodes[tetrahedrons[i + 1]],
                 envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]], objectDensity);
             tetrahedronsList.Add(tetrahedron);
@@ -227,12 +228,12 @@ public class MassSpring : MonoBehaviour
 
             for (int i = 0; i < assetVertices.Length; i++)
             {
-                //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los puntos.
+                //Se actualiza la copia del array de vértices del asset visual, pasando de coordenadas globales a locales las nuevas posiciones de los puntos.
                 assetVertices[i] = transform.InverseTransformPoint(assetPoints[i].pos);
             }
 
-            assetMesh.vertices = assetVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
-            assetMesh.RecalculateBounds(); //Se recalculan los bordes de la malla.
+            assetMesh.vertices = assetVertices; //Se asigna al array de vértices del mallado del asset la copia del array de vértices del asset modificada.
+            assetMesh.RecalculateBounds(); //Se recalculan los bordes de la malla del asset.
         }
     }
 
