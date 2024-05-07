@@ -714,7 +714,7 @@ MonoBehaviour:
   nodesFile: {fileID: 4900000, guid: 5e02cffdebc718e44b5b9cf6ff0af156, type: 3}
   tetrahedronsFile: {fileID: 4900000, guid: cf177c11e2871694eb330e5359b7fc31, type: 3}
   objectDensity: 0.005
-  tractionSpringStiffnessDensity: 10
+  tractionSpringStiffnessDensity: 100
   dAbsolute: 0.002
   dDeformation: 0.02
   g: {x: 0, y: 9.8, z: 0}
