@@ -48,13 +48,18 @@ namespace Assets.Scripts
             return Mathf.Abs(Vector3.Dot(A, Vector3.Cross(B, C))) / 6;
         }
 
+        //Método que ofrece la clase Tetraedro para calcular las coordenadas baricéntricas de un punto P respecto al tetraedro que invoque la función.
         public Vector4 CalculateBarycentricCoordinates(Vector3 P)
         {
+            //Las coordenadas baricéntricas de un punto respecto a un tetraedro son 4 valores, 1 por nodo del tetraedro.
+            //La fórmula de cada valor es la siguiente: wi = Vi/V
+            //Se calculan como el volumen del tetraedro formado por el punto P y el resto de nodos del tetraedro excepto el i, entre el volumen del tetraedro original.
             float w0 = CalculateVolume(P, node1.pos, node2.pos, node3.pos) / volume;
             float w1 = CalculateVolume(node0.pos, P, node2.pos, node3.pos) / volume;
             float w2 = CalculateVolume(node0.pos, node1.pos, P, node3.pos) / volume;
             float w3 = CalculateVolume(node0.pos, node1.pos, node2.pos, P) / volume;
 
+            //Se devuelven ordenadas en forma de Vector4.
             return new Vector4(w0, w1, w2, w3);
         }
 

@@ -26,17 +26,18 @@ public class MassSpring : MonoBehaviour
 
     List<Node> envelopeNodes; //Lista de objetos de la clase nodo que almacenan las propiedas físicas de los vértices del mallado de tetraedros para el
                               //cálculo de la animación.
-    List<Spring> envelopeSprings = new List<Spring>(); //Lista de objetos de la clase muelle que almacena las propiedades físicas de cada muelle y los 2 vértices
-                                                       //del mallado de tetraedros que lo componen para el cálculo de la animación.
+    List<Spring> envelopeSprings = new List<Spring>(); //Lista de objetos de la clase muelle que almacenan las propiedades físicas de cada muelle y los 2 vértices
+                                                       //que lo componen del mallado de tetraedros para el cálculo de la animación.
 
-    public TextAsset tetrahedronsFile; //Documento de texto que almacena los índices de los cuatro vértices de cada tetraedro.
-    int[] tetrahedrons; //Array que almacena cuatro enteros por tetraedro (extraidos del documento anterior).
+    public TextAsset tetrahedronsFile; //Documento de texto que almacena los índices de los cuatro vértices de cada tetraedro. Estos índices comienzan en 1.
+    int[] tetrahedrons; //Array que almacena cuatro enteros por tetraedro (extraidos del documento anterior). Estos índices comienzan en 0.
     List<Edge> edges = new List<Edge>(); //Lista que almacena todas las aristas de la malla de tetraedros.
     List<Tetrahedron> tetrahedronsList = new List<Tetrahedron>(); //Lista que almacena los tetraedros del mallado con referencias a los nodos que lo componen.
 
-    Mesh assetMesh; //Mallado triangular del objeto 3D.
-    Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado.
-    List<Point> assetNodes;
+    Mesh assetMesh; //Mallado triangular del objeto 3D o asset visual.
+    Vector3[] assetVertices; //Array que almacena en cada posición una copia de la posición 3D de cada vértice del mallado del asset visual.
+    List<Point> assetPoints; //Lista de vértices del asset visual como objetos de la clase Punto. Además de la posición del vértice, almacenan una referencia al tetraedro
+                             //contenedor y las coordenadas baricéntricas del vértice.
 
     public float objectDensity = 0.005f; //Densidad de masa del objeto.
 
@@ -55,7 +56,7 @@ public class MassSpring : MonoBehaviour
 
     private float h_def; //Paso efectivo finalmente utilizado en la integración. Puede diferir de h en caso de que substeps > 1.
 
-    private Wind wind; //Componente del viento y sus propiedades para aplicar la fuerza de este sobre la tela.
+    private Wind wind; //Componente del viento y sus propiedades para aplicar la fuerza de este sobre el objeto 3D.
 
     // Start is called before the first frame update
     void Start()
@@ -79,8 +80,7 @@ public class MassSpring : MonoBehaviour
 
         for (int i = 0; i < envelopeVertices.Length; i++)
         {
-            //Se insertan en la lista cada uno de los vértices, almacenándose su identificador, su posición en coordenadas globales,
-            //y la parte proporcional que le corresponde de la masa total de la tela.
+            //Se insertan en la lista cada uno de los vértices, almacenándose su identificador y su posición en coordenadas globales.
             envelopeNodes.Add(new Node(i, transform.TransformPoint(envelopeVertices[i])));
         }
 
@@ -104,7 +104,7 @@ public class MassSpring : MonoBehaviour
                 envelopeNodes[tetrahedrons[i + 2]], envelopeNodes[tetrahedrons[i + 3]], objectDensity);
             tetrahedronsList.Add(tetrahedron);
 
-            //Se crean las 6 aristas del tetraedro.
+            //Se crean las 6 aristas del tetraedro. Cada una de estas aristas posee 1/6 del volumen del tetraedro que las contiene.
             Edge A = new Edge(tetrahedrons[i], tetrahedrons[i + 1], tetrahedron.volume / 6);
             Edge B = new Edge(tetrahedrons[i], tetrahedrons[i + 2], tetrahedron.volume / 6);
             Edge C = new Edge(tetrahedrons[i], tetrahedrons[i + 3], tetrahedron.volume / 6);
@@ -120,20 +120,23 @@ public class MassSpring : MonoBehaviour
 
         edges.Sort(); //Se necesita tener las aristas ordenadas. De esta forma, al recorrer el array, podemos detectar si justo se repitió una arista.
 
-        Edge previousEdge = null; //Almacenamos una referencia a la arista anterior
-        Spring previousSpring = null;
+        Edge previousEdge = null; //Almacenamos una referencia a la arista anterior.
+        Spring previousSpring = null; //Almacenamos una referencia al último muelle creado.
 
         for (int i = 0; i < edges.Count; i++) //Recorremos las aristas.
         {
-            if (edges[i].Equals(previousEdge)) //Si la arista actual es igual a la anterior (es una arista repetida)
+            if (edges[i].Equals(previousEdge)) //Si la arista actual es igual a la anterior (es una arista compartida y por tanto repetida)
             {
+                //No se crea un nuevo muelle, pues solo se quiere uno por arista distinta, pero se añade su volumen al del último muelle creado.
                 previousSpring.springVolume += edges[i].edgeVolume;
             }
             else //Si no
             {
-                //Agregamos un muelle de tracción en la arista. Se almacena el tipo de muelle en forma de string.
+                //Creamos un muelle de tracción en la arista.
                 previousSpring = new Spring(tractionSpringStiffnessDensity, envelopeNodes[edges[i].vertexA], envelopeNodes[edges[i].vertexB]);
+                //Cada arista que determine un muelle forma parte de un tetraedro distinto y aportan su volumen al del muelle.
                 previousSpring.springVolume += edges[i].edgeVolume;
+                //Se agrega el muelle creado a la lista de muelles de la envolvente.
                 envelopeSprings.Add(previousSpring);
             }
 
@@ -144,20 +147,20 @@ public class MassSpring : MonoBehaviour
                                                                           //Al haberse importado un ".obj", el mallado del objeto se encuentra en un objeto hijo.
         assetVertices = assetMesh.vertices; //Se almacena una copia de cada uno de los vértices del mallado del asset en un array.
 
-        assetNodes = new List<Point>(assetVertices.Length);
+        assetPoints = new List<Point>(assetVertices.Length); //Se crea una lista con tantos objetos Punto como vértices tenga el asset visual.
 
         for (int i = 0; i < assetVertices.Length; i++)
         {
-            assetNodes.Add(new Point(transform.TransformPoint(assetVertices[i])));
+            assetPoints.Add(new Point(transform.TransformPoint(assetVertices[i]))); //Se añade cada vértice del asset a la lista de puntos en coordenadas globales.
         }
 
-        foreach (Point point in assetNodes)
+        foreach (Point point in assetPoints) //Por cada punto del asset visual.
         {
-            foreach (Tetrahedron tetrahedron in tetrahedronsList)
+            foreach (Tetrahedron tetrahedron in tetrahedronsList) //Por cada tetraedro de la envolvente.
             {
-                if (tetrahedron.TetrahedronContainsPoint(point.pos))
+                if (tetrahedron.TetrahedronContainsPoint(point.pos)) //Si el tetraedro contiene al punto.
                 {
-                    point.SetContainerTetrahedron(tetrahedron);
+                    point.SetContainerTetrahedron(tetrahedron); //Se establece dicho tetraedro como tetraedro contenedor del punto y se calculan entonces sus coordenadas baricéntricas.
                 }
             }
         }
@@ -171,9 +174,9 @@ public class MassSpring : MonoBehaviour
             paused = !paused;
         }
 
-        //En caso de que alguna de las copias de los valores originales difiera de este (pues puede ser modificado desde el inspector), se actualizará la masa de los nodos,
-        //la rigidez de los muelles, o el tamaño del paso efectivo de integración. A su vez, se actualizará la copia, una vez realizados los cambios.
-        //Esto nos permite actualizar la masa de los nodos, la rigidez de los muelles y el paso de integración efectivo en tiempo de ejecución.
+        //En caso de que alguna de las copias de los valores originales difiera de este (pues puede ser modificado desde el inspector), se actualizará el tamaño del paso efectivo de
+        //integración. A su vez, se actualizará la copia, una vez realizados los cambios.
+        //Esto nos permite actualizar el paso de integración efectivo en tiempo de ejecución.
 
         if (hChangeCheck != h)
         {
@@ -217,15 +220,15 @@ public class MassSpring : MonoBehaviour
                 spring.UpdateSpring(); //Se recalculan los datos del muelle en el siguiente instante.
             }
 
-            foreach (Point point in assetNodes)
+            foreach (Point point in assetPoints) //Se recorre la lista de puntos del asset visual.
             {
-                point.UpdatePoint();
+                point.UpdatePoint(); //Se actualiza la posición de cada punto en función de las nuevas coordenadas integradas de los nodos de su tetraedro contenedor.
             }
 
             for (int i = 0; i < assetVertices.Length; i++)
             {
-                //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los nodos.
-                assetVertices[i] = transform.InverseTransformPoint(assetNodes[i].pos);
+                //Se actualiza la copia del array de vértices, pasando de coordenadas globales a locales las nuevas posiciones de los puntos.
+                assetVertices[i] = transform.InverseTransformPoint(assetPoints[i].pos);
             }
 
             assetMesh.vertices = assetVertices; //Se asigna al array de vértices del mallado la copia del array de vértices modificado.
@@ -338,7 +341,7 @@ public class MassSpring : MonoBehaviour
                 Gizmos.DrawSphere(node.pos, 0.2f); //Se pinta una esfera en cada uno de los nodos.
             }
         }
-    } //Estos Gizmos nos permiten ver en tiempo real el movimiento de los vértices y los muelles.
+    } //Estos Gizmos nos permiten ver en tiempo real el movimiento de los nodos y los muelles.
 
     //Método que se llama en caso de que se haya modificado el tamaño del paso de integración o el número de subpasos a realizar por frame, actualizando el paso efectivo.
     private void UpdateIntegrationStep()
