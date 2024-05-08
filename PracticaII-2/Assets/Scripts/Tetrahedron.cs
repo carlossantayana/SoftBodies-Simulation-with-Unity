@@ -63,24 +63,40 @@ namespace Assets.Scripts
             return new Vector4(w0, w1, w2, w3);
         }
 
+        //Método que ofrece la clase Tetraedro para determinar si un punto P se encuentra en el interior del tetraedro que invoque la función.
         public bool TetrahedronContainsPoint(Vector3 P)
         {
+            //Para determinar si un punto P se encuentra contenido en el tetraedro se debe comparar su posición con respecto a las normales de cada una de las caras del tetraedro.
+            //Teniendo en cuenta la ordenación de los nodos dada por la herramienta TetGen:
+            //1º: se obtienen dos vectores pertenecientes a cada cara.
+            //2º: se calcula el producto vectorial que devuelve el vector en sentido hacia el interior del tetraedro. Se debe tener en cuenta que Unity utiliza
+            //un sistema de coordenadas a izquierdas, por lo que el producto vectorial se hace a la inversa.
+            //3º: se obtiene un vector que va desde uno de los vértices de la cara hasta el punto P.
+            //4º: se calcula el producto escalar entre el vector normal de la cara y el vector que va hacia el punto P.
+            //5º: si el producto escalar es positivo, significa que ambos vectores apuntan hacia el mismo lado de la cara del tetraedro, de manera que el punto P estaría hacia
+            //el interior respecto a la cara.
+            //6º: si es positivo en todas las caras, el punto P está en el interior del tetraedro. Con que uno no sea positivo, no estaría contenido en el tetraedro.
+
+            //CARA DE LOS NODOS 0, 1 Y 2 DEL TETRAEDRO
             Vector3 v01 = node1.pos - node0.pos;
             Vector3 v02 = node2.pos - node0.pos;
             Vector3 normal012 = Vector3.Cross(v02, v01).normalized;
             Vector3 v0P = (P - node0.pos).normalized;
             float dot012 = Vector3.Dot(normal012, v0P);
 
+            //CARA DE LOS NODOS 0, 1 Y 3 DEL TETRAEDRO
             Vector3 v03 = node3.pos - node0.pos;
             Vector3 normal013 = Vector3.Cross(v01, v03).normalized;
             float dot013 = Vector3.Dot(normal013, v0P);
 
+            //CARA DE LOS NODOS 1, 2 Y 3 DEL TETRAEDRO
             Vector3 v21 = node1.pos - node2.pos;
             Vector3 v23 = node3.pos - node2.pos;
             Vector3 normal123 = Vector3.Cross(v23, v21).normalized;
             Vector3 v2P = (P - node2.pos).normalized;
             float dot123 = Vector3.Dot(normal123, v2P);
 
+            //CARA DE LOS NODOS 0, 2 Y 3 DEL TETRAEDRO
             Vector3 normal023 = Vector3.Cross(v03, v02).normalized;
             float dot023 = Vector3.Dot(normal023, v0P);
 
