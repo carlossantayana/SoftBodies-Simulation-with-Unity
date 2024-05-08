@@ -256,6 +256,7 @@ public class MassSpring : MonoBehaviour
         }
 
         //Para cada muelle, se aplica la fuerza elástica a los dos nodos que lo componen, en sentidos opuestos por el principio de acción y reacción.
+        //Con respecto a la práctica de la tela, se ha añadido un factor que depende del volumen del muelle y de su longitud en reposo a la fuerza elástica.
         foreach (Spring spring in envelopeSprings)
         {
             spring.nodeA.force += -(spring.springVolume / Mathf.Pow(spring.lenght0, 2)) * spring.k * (spring.lenght - spring.lenght0)
@@ -288,6 +289,7 @@ public class MassSpring : MonoBehaviour
         }
 
         //Para cada muelle, se aplica la fuerza elástica a los dos nodos que lo componen, en sentidos opuestos por el principio de acción y reacción.
+        //Con respecto a la práctica de la tela, se ha añadido un factor que depende del volumen del muelle y de su longitud en reposo a la fuerza elástica.
         foreach (Spring spring in envelopeSprings)
         {
             spring.nodeA.force += -(spring.springVolume/Mathf.Pow(spring.lenght0, 2)) * spring.k * (spring.lenght - spring.lenght0) 
