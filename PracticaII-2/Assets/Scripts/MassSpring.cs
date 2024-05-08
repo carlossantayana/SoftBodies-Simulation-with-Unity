@@ -355,42 +355,46 @@ public class MassSpring : MonoBehaviour
     //Parser para leer el fichero de tetraedros.
     void ReadTetrahedronsFile()
     {
-        List<int> tetrahedrons = new List<int>();
+        List<int> tetrahedrons = new List<int>(); //Lista auxiliar en la que ir almacenado los 4 enteros de cada tetraedro.
 
-        string[] lines = tetrahedronsFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = tetrahedronsFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries); //Se divide el texto en un array de string con cada una de las líneas en una posición.
 
-        for (int i = 1; i < lines.Length - 1; i++)
+        for (int i = 1; i < lines.Length - 1; i++) //Se omiten la primera y última línea, pues contienen información adicional no necesaria.
         {
-            string line = lines[i];
-            string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-            for (int j = 1; j < values.Length; j++)
+            string line = lines[i]; //Se almacena un string con la línea.
+            string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries); //Se divide la línea en sus distintos valores en un array de string.
+            for (int j = 1; j < values.Length; j++) //Se omite el primer valor, pues es el identificador del tetraedro.
             {
-                string value = values[j].Trim('\r');
-                tetrahedrons.Add(int.Parse(value) - 1);
+                string value = values[j].Trim('\r'); //Se almacena el valor en un string, eliminando el retorno de carro en caso de que lo tenga.
+                tetrahedrons.Add(int.Parse(value) - 1); //Se añade el índice del nodo del tetraedro a la lista auxiliar de tetraedros. Se resta 1 para hacer que estos índices comiencen en 0.
             }
         }
 
-        this.tetrahedrons = tetrahedrons.ToArray();
+        this.tetrahedrons = tetrahedrons.ToArray(); //La lista auxiliar se convierte en array y se asigna al atributo del array de tetraedros.
     }
 
     //Parser para leer el fichero de nodos.
     void ReadNodesFile()
     {
-        List<Vector3> vertices = new List<Vector3>();
+        List<Vector3> vertices = new List<Vector3>(); //Lista auxiliar en la que ir almacenado las posiciones de los nodos de la malla de tetraedros.
 
-        string[] lines = nodesFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = nodesFile.text.Split("\n", System.StringSplitOptions.RemoveEmptyEntries); //Se divide el texto en un array de string con cada una de las líneas en una posición.
 
-        for (int i = 1; i < lines.Length - 1; i++)
+        for (int i = 1; i < lines.Length - 1; i++) //Se omiten la primera y última línea, pues contienen información adicional no necesaria.
         {
-            string line = lines[i];
-            string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+            string line = lines[i]; //Se almacena un string con la línea.
+            string[] values = line.Split(' ', System.StringSplitOptions.RemoveEmptyEntries); //Se divide la línea en sus distintos valores en un array de string.
+
+            //Se almacenan los valores en un float en orden 1, 3 y 2. Esto se debe a que en el documento se utiliza el sistema de coordenadas a derechas, y en Unity es a izquierdas.
+            //Se elimina el retorno de carro del valor en caso de que lo tenga.
+            //En el parser a float se añade un segundo parámetro para evitar que el punto se tome como un separador de miles y se utilice como separador de decimales.
             float valueX = float.Parse(values[1].Trim('\r'), CultureInfo.InvariantCulture);
             float valueY = float.Parse(values[3].Trim('\r'), CultureInfo.InvariantCulture);
             float valueZ = float.Parse(values[2].Trim('\r'), CultureInfo.InvariantCulture);
-            Vector3 vertex = new Vector3(valueX, valueY, valueZ);
-            vertices.Add(vertex);
+            Vector3 vertex = new Vector3(valueX, valueY, valueZ); //Se crea el vértice de la malla de tetraedros.
+            vertices.Add(vertex); //Se añade a la lista auxiliar de vértices de la malla de tetraedros.
         }
 
-        this.envelopeVertices = vertices.ToArray();
+        this.envelopeVertices = vertices.ToArray(); //La lista auxiliar se convierte en array y se asigna al atributo del array de vértices de la malla de tetraedros.
     }
 }
