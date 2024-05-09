@@ -48,7 +48,7 @@ namespace Assets.Scripts
             return Mathf.Abs(Vector3.Dot(A, Vector3.Cross(B, C))) / 6;
         }
 
-        //Método que ofrece la clase Tetraedro para calcular las coordenadas baricéntricas de un punto P respecto al tetraedro que invoque la función.
+        //Método para calcular las coordenadas baricéntricas de un punto P respecto al tetraedro que lo invoque.
         public Vector4 CalculateBarycentricCoordinates(Vector3 P)
         {
             //Las coordenadas baricéntricas de un punto respecto a un tetraedro son 4 valores, 1 por nodo del tetraedro.
@@ -63,7 +63,7 @@ namespace Assets.Scripts
             return new Vector4(w0, w1, w2, w3);
         }
 
-        //Método que ofrece la clase Tetraedro para determinar si un punto P se encuentra en el interior del tetraedro que invoque la función.
+        //Método para determinar si un punto P se encuentra en el interior del tetraedro que lo invoque.
         public bool TetrahedronContainsPoint(Vector3 P)
         {
             //Para determinar si un punto P se encuentra contenido en el tetraedro se debe comparar su posición con respecto a las normales de cada una de las caras del tetraedro.
